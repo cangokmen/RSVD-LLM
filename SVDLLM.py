@@ -12,6 +12,7 @@ from component.svd_llama import SVD_LlamaAttention, SVD_LlamaMLP
 from component.svd_mistral import SVD_MistralAttention, SVD_MistralMLP
 from component.svd_opt import SVDOPTDecoderLayer
 from utils.model_utils import *
+from utils.rsvd import randomized_svd
 from evaluater import * 
 
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -184,13 +185,14 @@ def profle_svdllm_low_resource(model_name, model, calib_loader, dev):
      
  
 @torch.no_grad()
-def whitening(model_name, model, profiling_mat, ratio, dev):
+def whitening(model_name, model, profiling_mat, ratio, dev, rsvd_oversamples=10, rsvd_n_iter=2, use_standard_svd=False):
     model.eval()
     if 'opt' in model_name:
         layers = model.model.decoder.layers
     else:
         layers = model.model.layers
-    print("Start SVD decomposition after whitening...")
+    svd_method = "Standard SVD" if use_standard_svd else "Randomized SVD (RSVD)"
+    print(f"Start {svd_method} decomposition after whitening...")
     for i in tqdm(range(len(layers))):
         layer = layers[i]
         subset = find_layers(layer)
@@ -217,11 +219,20 @@ def whitening(model_name, model, profiling_mat, ratio, dev):
             scaling_diag_matrix = scaling_diag_matrix.float()
             scaling_matrix_inv = scaling_matrix_inv.float()
             W_scale = torch.matmul(W, scaling_diag_matrix)
-            U, S, VT = torch.linalg.svd(W_scale, full_matrices=False)
             num_s_after_trunc = int(W.shape[0] * W.shape[1] * ratio / (W.shape[0] + W.shape[1]))
-            truc_s = S[:num_s_after_trunc]
-            truc_u = U[:, :num_s_after_trunc]
-            truc_v = torch.matmul(VT[:num_s_after_trunc, :], scaling_matrix_inv)
+            
+            if use_standard_svd:
+                # Use standard SVD (slower but deterministic)
+                U, S, VT = torch.linalg.svd(W_scale, full_matrices=False)
+                truc_s = S[:num_s_after_trunc]
+                truc_u = U[:, :num_s_after_trunc]
+                truc_v = torch.matmul(VT[:num_s_after_trunc, :], scaling_matrix_inv)
+            else:
+                # Use Randomized SVD for faster computation
+                U, S, VT = randomized_svd(W_scale, rank=num_s_after_trunc, n_oversamples=rsvd_oversamples, n_iter=rsvd_n_iter)
+                truc_s = S
+                truc_u = U
+                truc_v = torch.matmul(VT, scaling_matrix_inv)
             truc_sigma = torch.diag(truc_s)
             #### Replace Attn, MLP ####
             sqrtSigma = torch.sqrt(truc_sigma)
@@ -286,8 +297,9 @@ def whitening(model_name, model, profiling_mat, ratio, dev):
 
 
 @torch.no_grad()
-def whitening_local_update(model_name, model, dataloader, profiling_mat, ratio, dev, direct_update=False):
-    print("Start SVD decomposition then update...")
+def whitening_local_update(model_name, model, dataloader, profiling_mat, ratio, dev, direct_update=False, rsvd_oversamples=10, rsvd_n_iter=2, use_standard_svd=False):
+    svd_method = "Standard SVD" if use_standard_svd else "Randomized SVD (RSVD)"
+    print(f"Start {svd_method} decomposition then update...")
     use_cache = model.config.use_cache
     model.config.use_cache = False
     if "opt" in model_name:
@@ -355,7 +367,7 @@ def whitening_local_update(model_name, model, dataloader, profiling_mat, ratio, 
                 scaling_diag_matrix = profiling_mat[i][name].to(dev)
             else: 
                 scaling_diag_matrix = None
-            gpts[name] = local_update(subset[name], scaling_diag_matrix = scaling_diag_matrix, ratio=ratio, name=name, direct_update=direct_update)
+            gpts[name] = local_update(subset[name], scaling_diag_matrix = scaling_diag_matrix, ratio=ratio, name=name, direct_update=direct_update, rsvd_oversamples=rsvd_oversamples, rsvd_n_iter=rsvd_n_iter, use_standard_svd=use_standard_svd)
         
         def add_batch(name):
             def tmp(_, inp, out):
@@ -440,7 +452,7 @@ def whitening_local_update(model_name, model, dataloader, profiling_mat, ratio, 
 
 
 class local_update:
-    def __init__(self, layer, scaling_diag_matrix, ratio, name, direct_update=False):
+    def __init__(self, layer, scaling_diag_matrix, ratio, name, direct_update=False, rsvd_oversamples=10, rsvd_n_iter=2, use_standard_svd=False):
         self.layer = layer
         self.name = name
         self.dev = self.layer.weight.device
@@ -448,8 +460,14 @@ class local_update:
         W = layer.weight.data.clone()
         self.rows = W.shape[0]
         self.columns = W.shape[1]
+        num_s_after_trunc = int(W.shape[0] * W.shape[1] * ratio / (W.shape[0] + W.shape[1]))
         if direct_update:
-            self.U, self.S, self.VT = torch.linalg.svd(W.data, full_matrices=False)
+            if use_standard_svd:
+                # Use standard SVD (slower but deterministic)
+                self.U, self.S, self.VT = torch.linalg.svd(W.data, full_matrices=False)
+            else:
+                # Use Randomized SVD for faster computation
+                self.U, self.S, self.VT = randomized_svd(W.data, rank=num_s_after_trunc, n_oversamples=rsvd_oversamples, n_iter=rsvd_n_iter)
         else: 
             try:
                 scaling_matrix_inv = torch.linalg.inv(scaling_diag_matrix)
@@ -460,17 +478,29 @@ class local_update:
             scaling_diag_matrix = scaling_diag_matrix.float()
             scaling_matrix_inv = scaling_matrix_inv.float()
             W_scale = torch.matmul(W, scaling_diag_matrix)
-            self.U, self.S, self.VT = torch.linalg.svd(W_scale, full_matrices=False)  
-        # trucation SVD
-        num_s_after_trunc = int(W.shape[0] * W.shape[1] * ratio / (W.shape[0] + W.shape[1]))
-        self.truc_s = self.S[:num_s_after_trunc].cuda()
-        self.truc_u = self.U[:, :num_s_after_trunc].cuda()
-        if direct_update:
-            self.truc_v = self.VT[:num_s_after_trunc, :].cuda()
+            
+            if use_standard_svd:
+                # Use standard SVD (slower but deterministic)
+                self.U, self.S, self.VT = torch.linalg.svd(W_scale, full_matrices=False)
+            else:
+                # Use Randomized SVD for faster computation
+                self.U, self.S, self.VT = randomized_svd(W_scale, rank=num_s_after_trunc, n_oversamples=rsvd_oversamples, n_iter=rsvd_n_iter)
+        
+        # Truncate if using standard SVD
+        if use_standard_svd:
+            self.truc_s = self.S[:num_s_after_trunc].cuda()
+            self.truc_u = self.U[:, :num_s_after_trunc].cuda()
         else:
-            self.truc_v = torch.matmul(self.VT[:num_s_after_trunc, :].cuda(), scaling_matrix_inv)
+            # RSVD already returns truncated matrices
+            self.truc_s = self.S.cuda()
+            self.truc_u = self.U.cuda()
+        if direct_update:
+            self.truc_v = self.VT[:num_s_after_trunc, :].cuda() if use_standard_svd else self.VT.cuda()
+        else:
+            vt_truncated = self.VT[:num_s_after_trunc, :] if use_standard_svd else self.VT
+            self.truc_v = torch.matmul(vt_truncated.cuda(), scaling_matrix_inv)
         self.truc_sigma = torch.diag(self.truc_s)
-        self.new_w = torch.matmul(self.truc_u, torch.matmul(self.truc_sigma, self.truc_v[:num_s_after_trunc, :]))
+        self.new_w = torch.matmul(self.truc_u, torch.matmul(self.truc_sigma, self.truc_v))
         # intialize H for close form solution
         self.updated_err = self.error = 0
 
@@ -518,6 +548,9 @@ if __name__ == '__main__':
     parser.add_argument('--gen_seq_len', type=int, default=1024, help='generated sequence len for efficiency evaluation')
     parser.add_argument('--step', type=int, default=4, help='the step to run the compression')
     parser.add_argument('--lora', type=str, default=None, help='the lora updated weight path to run the accuracy evaluation')
+    parser.add_argument('--use_standard_svd', action='store_true', help='Use standard SVD instead of RSVD (slower but deterministic)')
+    parser.add_argument('--rsvd_oversamples', type=int, default=10, help='Number of oversamples for Randomized SVD (default: 10)')
+    parser.add_argument('--rsvd_n_iter', type=int, default=2, help='Number of power iterations for Randomized SVD (default: 2)')
     
     args = parser.parse_args()
     args.ratio = 1- args.ratio
@@ -531,7 +564,7 @@ if __name__ == '__main__':
                 torch.save(profiling_mat, args.save_path + "/" + args.model.replace("/", "_").replace("-", "_") + '_profiling_'+ args.dataset + '_' + str(args.whitening_nsamples)  + '_' + str(args.seed)+ '.pt')
         else:
             profiling_mat = torch.load(args.profiling_mat_path)
-        whitening(args.model, model, profiling_mat, args.ratio, args.DEV)
+        whitening(args.model, model, profiling_mat, args.ratio, args.DEV, args.rsvd_oversamples, args.rsvd_n_iter, args.use_standard_svd)
         if args.save_path is not None:
             torch.save({'model': model, 'tokenizer': tokenizer}, args.save_path + "/" + args.model.replace("/", "_").replace("-", "_") +'_whitening_only_' + str(args.ratio) + '.pt')   # fp32
     elif args.step == 2:
@@ -546,7 +579,7 @@ if __name__ == '__main__':
                 torch.save(profiling_mat, args.save_path + "/" + args.model.replace("/", "_").replace("-", "_") + '_profiling_'+ args.dataset + '_' + str(args.whitening_nsamples)  + '_' + str(args.seed)+ '.pt')
         else:
             profiling_mat = torch.load(args.profiling_mat_path)
-        whitening_local_update(args.model, model, dataloader, profiling_mat, args.ratio, args.DEV)
+        whitening_local_update(args.model, model, dataloader, profiling_mat, args.ratio, args.DEV, rsvd_oversamples=args.rsvd_oversamples, rsvd_n_iter=args.rsvd_n_iter, use_standard_svd=args.use_standard_svd)
         if args.save_path is not None:
             torch.save({'model': model, 'tokenizer': tokenizer}, args.save_path + "/" + args.model.replace("/", "_").replace("-", "_") +'_whitening_then_update_' + str(args.ratio) + '.pt')  # fp32
     elif args.step == 3:
@@ -554,7 +587,7 @@ if __name__ == '__main__':
         model = model.eval()
         model = model.float()
         dataloader, _ = get_loaders(args.dataset, nsamples=args.updating_nsamples, seed=args.seed, tokenizer=tokenizer, seqlen=args.model_seq_len)
-        whitening_local_update(model_name=args.model, model=model, dataloader=dataloader, profiling_mat=None, ratio=args.ratio, dev=args.DEV, direct_update=True)
+        whitening_local_update(model_name=args.model, model=model, dataloader=dataloader, profiling_mat=None, ratio=args.ratio, dev=args.DEV, direct_update=True, rsvd_oversamples=args.rsvd_oversamples, rsvd_n_iter=args.rsvd_n_iter, use_standard_svd=args.use_standard_svd)
         if args.save_path is not None:
             torch.save({'model': model, 'tokenizer': tokenizer}, args.save_path + "/" + args.model.replace("/", "_").replace("-", "_") +'_update_only_' + str(args.ratio) + '.pt')   # fp32
     elif args.step >= 4:

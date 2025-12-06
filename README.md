@@ -47,6 +47,48 @@
 > Annual Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics (NAACL) 2025
 
 
+## Randomized SVD (RSVD) Implementation
+
+This repository now supports **Randomized SVD (RSVD)** for faster and more efficient compression of large language models. RSVD provides significant speedup over standard SVD decomposition, especially for large weight matrices, while maintaining comparable accuracy.
+
+### Key Benefits of RSVD
+
+- **Faster Compression**: RSVD uses randomized algorithms to approximate SVD, providing substantial speedup for large matrices
+- **Memory Efficient**: Computes only the top-k singular values/vectors needed for compression
+- **Configurable Accuracy**: Control the trade-off between speed and accuracy with `--rsvd_oversamples` and `--rsvd_n_iter` parameters
+
+### RSVD Parameters
+
+- `--rsvd_oversamples`: Number of additional samples for improved accuracy (default: 10)
+- `--rsvd_n_iter`: Number of power iterations for better approximation (default: 2)
+
+### Example Usage with RSVD
+
+```bash
+python SVDLLM.py \
+  --step 1 \
+  --ratio 0.2 \
+  --model jeffwan/llama-7b-hf \
+  --whitening_nsamples 256 \
+  --dataset wikitext2 \
+  --seed 0 \
+  --model_seq_len 2048 \
+  --save_path ./compressed_models \
+  --rsvd_oversamples 10 \
+  --rsvd_n_iter 2
+```
+
+For more aggressive compression with faster execution, reduce `--rsvd_n_iter` to 1:
+```bash
+python SVDLLM.py \
+  --step 1 \
+  --ratio 0.2 \
+  --model jeffwan/llama-7b-hf \
+  --rsvd_oversamples 10 \
+  --rsvd_n_iter 1 \
+  ...
+```
+
 ## Quick Start
 
 ### Installation
