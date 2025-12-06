@@ -1,0 +1,22 @@
+SVD vs RSVD Compression Benchmark Results
+==========================================
+
+Configuration:
+- Model: jeffwan/llama-7b-hf
+- Compression Ratio: 0.3 (keeping 0.7 or 70.0% of parameters)
+- Dataset: wikitext2
+- Whitening Samples: 256 (both methods)
+
+Compression Timing:
+1. RSVD (with whitening):       1404 seconds
+2. SVD (with whitening):        2051 seconds
+
+Speedup Analysis:
+- RSVD vs SVD:                  1.46x speedup
+
+Compressed Models:
+- RSVD:                      ./benchmark_results_comparison/ratio_0.3/rsvd/jeffwan_llama_7b_hf_whitening_only_0.7.pt
+- SVD:                       ./benchmark_results_comparison/ratio_0.3/svd/jeffwan_llama_7b_hf_whitening_only_0.7.pt
+
+Next Step:
+Run RATIO=0.3 ./evaluate_svd_vs_rsvd.sh to evaluate model quality (perplexity)

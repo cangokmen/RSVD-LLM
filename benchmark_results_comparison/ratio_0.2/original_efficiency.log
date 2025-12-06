@@ -1,0 +1,25 @@
+/projectnb/manoslab/cgokmen/venvs/rsvd_compress/lib/python3.10/site-packages/transformers/utils/generic.py:441: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.
+  _torch_pytree._register_pytree_node(
+/projectnb/manoslab/cgokmen/venvs/rsvd_compress/lib/python3.10/site-packages/transformers/utils/generic.py:309: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.
+  _torch_pytree._register_pytree_node(
+/projectnb/manoslab/cgokmen/venvs/rsvd_compress/lib/python3.10/site-packages/transformers/utils/generic.py:309: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.
+  _torch_pytree._register_pytree_node(
+/projectnb/manoslab/cgokmen/venvs/rsvd_compress/lib/python3.10/site-packages/huggingface_hub/file_download.py:942: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama.LlamaTokenizer'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thouroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565
+evaluating original...
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:02<00:02,  2.98s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:04<00:00,  1.84s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:04<00:00,  2.01s/it]
+time: 8.579972267150879
+time: 6.310497283935547
+time: 6.310513973236084
+time: 6.309621334075928
+time: 6.30942964553833
+time: 6.309717416763306
+time: 6.308625221252441
+time: 6.310105800628662
+time: 6.307951927185059
+time: 6.308153867721558
+Total Memory: 25.429219722747803 GB
+Weight Memory: 25.165069580078125 GB
+Activation Memory: 0.2562136650085449 GB
+Throughput: 19.582468500500127 tokens/sec

@@ -1,0 +1,21 @@
+/projectnb/manoslab/cgokmen/venvs/rsvd_compress/lib/python3.10/site-packages/transformers/utils/generic.py:441: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.
+  _torch_pytree._register_pytree_node(
+/projectnb/manoslab/cgokmen/venvs/rsvd_compress/lib/python3.10/site-packages/transformers/utils/generic.py:309: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.
+  _torch_pytree._register_pytree_node(
+/projectnb/manoslab/cgokmen/venvs/rsvd_compress/lib/python3.10/site-packages/transformers/utils/generic.py:309: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.
+  _torch_pytree._register_pytree_node(
+evaluating ./benchmark_results_comparison/ratio_0.3/rsvd/jeffwan_llama_7b_hf_whitening_only_0.7.pt...
+time: 5.496938943862915
+time: 5.273788690567017
+time: 5.27497935295105
+time: 5.273820400238037
+time: 5.271116256713867
+time: 5.2668046951293945
+time: 5.2662413120269775
+time: 5.271674394607544
+time: 5.271274089813232
+time: 5.264306545257568
+Total Memory: 18.211934566497803 GB
+Weight Memory: 17.947784423828125 GB
+Activation Memory: 0.2562136650085449 GB
+Throughput: 24.182451450850706 tokens/sec
