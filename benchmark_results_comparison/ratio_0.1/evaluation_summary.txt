@@ -2,9 +2,9 @@ Evaluation Results for Compression Ratio 0.1
 ================================================
 
 PERPLEXITY (lower is better):
-- Original: 
-- RSVD:     
-- SVD:      
+- Original: 5.677273932979364
+- RSVD: 7.205756485847436
+- SVD: 7.068120052306313  
 
 EFFICIENCY (higher is better):
 - Original: Throughput: 20.158842033202326 tokens/sec
