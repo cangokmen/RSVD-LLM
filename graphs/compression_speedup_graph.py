@@ -65,7 +65,7 @@ ax.set_xlabel('Compression Ratio', fontsize=12, fontweight='bold')
 ax.set_ylabel('Compression Time (seconds)', fontsize=12, fontweight='bold')
 ax.set_title('Compression Time Comparison: RSVD vs SVD', fontsize=14, fontweight='bold')
 ax.set_xticks(x)
-ax.set_xticklabels(data['ratio'])
+ax.set_xticklabels([1 - r for r in data['ratio']])
 ax.legend(fontsize=11)
 ax.grid(True, alpha=0.3, axis='y')
 

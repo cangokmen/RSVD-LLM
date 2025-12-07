@@ -62,15 +62,18 @@ for ratio in ratios:
     else:
         print(f"Warning: {summary_file} not found")
 
+# Convert ratios to 1-ratio for x-axis
+x_values = [1 - r for r in data['ratio']]
+
 # Create the plot
 plt.figure(figsize=(10, 6))
 
 # Plot lines
-plt.plot(data['ratio'], data['original'], marker='o', linewidth=2, markersize=8, 
+plt.plot(x_values, data['original'], marker='o', linewidth=2, markersize=8, 
          label='Original', color='#2ecc71')
-plt.plot(data['ratio'], data['rsvd'], marker='s', linewidth=2, markersize=8, 
+plt.plot(x_values, data['rsvd'], marker='s', linewidth=2, markersize=8, 
          label='RSVD', color='#e74c3c')
-plt.plot(data['ratio'], data['svd'], marker='^', linewidth=2, markersize=8, 
+plt.plot(x_values, data['svd'], marker='^', linewidth=2, markersize=8, 
          label='SVD', color='#3498db')
 
 # Customize plot
@@ -81,7 +84,7 @@ plt.legend(fontsize=11, loc='upper left')
 plt.grid(True, alpha=0.3)
 
 # Set x-axis ticks
-plt.xticks(ratios)
+plt.xticks([1 - r for r in ratios])
 
 plt.tight_layout()
 
