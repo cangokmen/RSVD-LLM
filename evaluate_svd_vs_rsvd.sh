@@ -12,7 +12,7 @@ set -e  # Exit on error
 
 # Configuration (must match compression script)
 MODEL="jeffwan/llama-7b-hf"
-RATIO=0.5 # Can be overridden: RATIO=0.5 ./evaluate_svd_vs_rsvd.sh
+RATIO=0.1 # Can be overridden: RATIO=0.5 ./evaluate_svd_vs_rsvd.sh
 DATASET="wikitext2"
 SEED=42
 SEQ_LEN=2048

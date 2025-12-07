@@ -29,7 +29,7 @@ echo ""
 
 # Configuration
 MODEL="jeffwan/llama-7b-hf"
-RATIO=0.4  
+RATIO=0.1  
 DATASET="wikitext2"
 WHITENING_SAMPLES=256
 SEED=42
