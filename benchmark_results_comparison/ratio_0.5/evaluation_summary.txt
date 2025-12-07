@@ -1,0 +1,25 @@
+Evaluation Results for Compression Ratio 0.5
+================================================
+
+PERPLEXITY (lower is better):
+- Original: 
+- RSVD:     
+- SVD:      
+
+EFFICIENCY (higher is better):
+- Original: Throughput: 20.209364930848402 tokens/sec
+- RSVD:     Throughput: 30.17958653244071 tokens/sec
+- SVD:      Throughput: 30.270934467803656 tokens/sec
+
+Evaluation Time:
+- Original (Perplexity):  371 seconds
+- Original (Efficiency):  90 seconds
+- RSVD (Perplexity):      235 seconds
+- RSVD (Efficiency):      57 seconds
+- SVD (Perplexity):       234 seconds
+- SVD (Efficiency):       58 seconds
+
+Log Files:
+- Original: original_perplexity.log, original_efficiency.log
+- RSVD:     rsvd_perplexity.log, rsvd_efficiency.log
+- SVD:      svd_perplexity.log, svd_efficiency.log
