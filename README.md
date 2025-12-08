@@ -1,43 +1,19 @@
-<p align="center">
-<img src="figures/logo.png" width="30%"> <br>
-</p>
-
 <div align="center">
-<h1>SVD-LLM: Singular Value Decomposition for Large Language Model Compression</h1>
-  <div align="center">
-  <a href="https://opensource.org/licenses/Apache-2.0">
-    <img alt="License: Apache 2.0" src="https://img.shields.io/badge/License-Apache%202.0-4E94CE.svg">
-  </a>
-  <a href="https://pytorch.org/">
-    <img src="https://img.shields.io/badge/PyTorch-%3E=v2.0.1-EE4C2C.svg?style=flat-square" alt="PyTorch>=v1.7.1">
-  </a>
-    <a href="https://huggingface.co/docs/transformers/v4.35.2/en/index">
-    <img src="https://img.shields.io/badge/transformers-v4.35.2-0B952C.svg?style=flat-square" alt="transformers==v4.35.2">
-  </a>
-  <a href="https://github.com/facebookresearch/llama">
-    <img src="https://img.shields.io/badge/LLMs-LLaMA-FFB000.svg?style=flat-square" alt="LLaMA">
-  </a>
-  <a href="https://github.com/facebookresearch/llama">
-    <img src="https://img.shields.io/badge/LLMs-Llama2-FAB093.svg?style=flat-square" alt="Llama-2">
-  </a>
-  <a href="https://huggingface.co/mistralai/Mistral-7B-v0.1">
-    <img src="https://img.shields.io/badge/LLMs-Mistral-8A2BE2.svg?style=flat-square" alt="mistral">
-  </a>
-  <a href="https://huggingface.co/facebook/opt-6.7b">
-    <img src="https://img.shields.io/badge/LLMs-OPT-ADD8E6.svg?style=flat-square" alt="opt">
-  </a>
-</div>
+<h1>RSVD-LLM: Randomized SVD for Large Language Model Compression</h1>
 </div>
 
 ## Introduction
-  
-> **[SVD-LLM: Truncation-aware Singular Value Decomposition for Large Language Model Compression](https://openreview.net/forum?id=LNYIUouhdt&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.cc%2F2025%2FConference%2FAuthors%23your-submissions))**
+
+This repository extends [SVD-LLM](https://github.com/AIoT-MLSys-Lab/SVD-LLM) with **Randomized SVD (RSVD)** implementation for significantly faster compression of large language models. 
+
+### Original SVD-LLM Papers
+
+> **[SVD-LLM: Truncation-aware Singular Value Decomposition for Large Language Model Compression](https://openreview.net/forum?id=LNYIUouhdt)**
 > 
-> *Xin Wang<sup>1</sup>, Yu Zheng<sup>2</sup>, Zhongwei Wan<sup>1</sup>, Mi Zhang<sup>1</sup>*   
-> *<sup>1</sup>The Ohio State University, <sup>2</sup>Michigan State University*
+> *Xin Wang, Yu Zheng, Zhongwei Wan, Mi Zhang*   
+> *The Ohio State University, Michigan State University*
 > 
 > International Conference on Learning Representations (ICLR) 2025
-
 
 > **[SVD-LLM V2: Optimizing Singular Value Truncation for Large Language Model Compression](https://arxiv.org/abs/2503.12340)**
 > 
@@ -46,23 +22,81 @@
 > 
 > Annual Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics (NAACL) 2025
 
-
 ## Randomized SVD (RSVD) Implementation
 
-This repository now supports **Randomized SVD (RSVD)** for faster and more efficient compression of large language models. RSVD provides significant speedup over standard SVD decomposition, especially for large weight matrices, while maintaining comparable accuracy.
+**RSVD** provides significant speedup over standard SVD decomposition for large weight matrices while maintaining comparable model quality and perplexity.
 
 ### Key Benefits of RSVD
 
-- **Faster Compression**: RSVD uses randomized algorithms to approximate SVD, providing substantial speedup for large matrices
+- **Faster Compression**: RSVD uses randomized algorithms to approximate SVD, providing **1.3x-1.4x speedup** for large matrices
 - **Memory Efficient**: Computes only the top-k singular values/vectors needed for compression
-- **Configurable Accuracy**: Control the trade-off between speed and accuracy with `--rsvd_oversamples` and `--rsvd_n_iter` parameters
+- **Comparable Quality**: Maintains similar perplexity and model performance compared to standard SVD
+- **Configurable**: Control the trade-off between speed and accuracy with `--rsvd_oversamples` and `--rsvd_n_iter` parameters
+
+### Benchmark Results
+
+Comprehensive benchmarks comparing RSVD vs SVD across compression ratios (0.1-0.5) are available in `benchmark_results_comparison/`. Visualizations can be generated using scripts in the `graphs/` folder:
+
+- `perplexity_graph.py` - Model perplexity comparison
+- `efficiency_graph.py` - Throughput comparison
+- `compression_speedup_graph.py` - Compression time comparison
+- `parameters_retained_graph.py` - Parameter retention analysis
+
+## Quick Start
+
+### Installation
+
+**Important:** Keep the transformers package at exactly version 4.35.2, as the compressed model structure has modifications in the `component/` folder.
+
+1. Create a conda environment with Python 3.9:
+```bash
+conda create -n compress python=3.9
+conda activate compress
+```
+
+2. Clone the repository:
+```bash
+git clone https://github.com/cangokmen/RSVD-LLM.git
+cd RSVD-LLM
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+### Quick Examples
+
+#### Standard SVD Compression
+```bash
+bash compress_llama.sh
+```
+Compresses LLaMA-7B with 20% compression ratio using standard SVD and evaluates perplexity and efficiency.
+
+#### RSVD vs SVD Benchmark
+```bash
+# Set compression ratio (0.1 to 0.5)
+export RATIO=0.2
+
+# Run compression benchmark
+bash compress_svd_vs_rsvd.sh
+
+# Run evaluation benchmark
+bash evaluate_svd_vs_rsvd.sh
+```
+This benchmarks both RSVD and SVD compression methods, measuring compression time, perplexity, and throughput.
+
+    
+## Usage
 
 ### RSVD Parameters
 
 - `--rsvd_oversamples`: Number of additional samples for improved accuracy (default: 10)
 - `--rsvd_n_iter`: Number of power iterations for better approximation (default: 2)
 
-### Example Usage with RSVD
+### Compression with RSVD
+
+For compression ratios ≤ 0.3, use truncation-aware data whitening:
 
 ```bash
 python SVDLLM.py \
@@ -78,59 +112,7 @@ python SVDLLM.py \
   --rsvd_n_iter 2
 ```
 
-For more aggressive compression with faster execution, reduce `--rsvd_n_iter` to 1:
-```bash
-python SVDLLM.py \
-  --step 1 \
-  --ratio 0.2 \
-  --model jeffwan/llama-7b-hf \
-  --rsvd_oversamples 10 \
-  --rsvd_n_iter 1 \
-  ...
-```
-
-## Quick Start
-
-### Installation
-Please keep the version of the transformers package exactly equal to 4.35.2 since the svd-compressed version of LLM has a slight change of model structure (in the `component/.` folder).
-Create and set up a conda environment with python version 3.9 (newer versions break some dependencies)
-```
-conda create -n compress python=3.9
-conda activate compress
-```
-Clone and navigate to the repository
-```
-git clone https://github.com/AIoT-MLSys-Lab/SVD-LLM.git
-```
-Install requirements.txt
-```
-pip install -r requirements.txt
-```
-
-### Quick Example
-```
-bash compress_llama.sh
-```
-This script would compress the LLaMA-7B model under 20\% compression ratio and automatically run the evaluation code, including both perplexity and efficiency of the compressed model.
-
-    
-## Step-by-Step Instructions of SVD-LLM
-    
-### 1. Truncation-Aware Data Whitening + SVD Compression
-Under the low compression ratio (recommended ratio <= 0.3), we first run the data whitening of the LLM and saved the weight along with the whitening information.
-```
-python SVDLLM.py \
---step 1  \
---ratio COMPRESSION_RATIO \
---model HUGGINGFACE_MODEL_REPO \
---whitening_nsamples WHITENING_SAMPLE_NUMBER \
---dataset WHITENING_DATASET \
---seed SAMPLING_SEED \
---model_seq_len MODEL_SEQ_LEN \
---save_path WHITENING_INFO_SAVING_PATH
-```
-
-<!-- To compress LLM with larger size, or to run the compression under the resource-constraint platform, we can add `--run_low_resource` to the command. -->
+**Faster compression:** Reduce `--rsvd_n_iter` to 1 for ~25% faster compression with minimal quality loss.
 
 
 ### 2. Parameter Update with Sequential Low-rank Approximation
@@ -152,23 +134,60 @@ SVD-LLM can also be integrated with quantization methods to achieve a better com
 bash svdllm_gptq.sh
 ```
 
-### 4. Evaluation
-- Perplexity Evaluation:
-```
+### Evaluation
+
+**Perplexity Evaluation:**
+```bash
 python SVDLLM.py \
---step 4 \
---model_path COMPRESSD_MODEL_SAVING_PATH  \
+  --step 4 \
+  --model_path ./compressed_models/your_model.pt
 ```
-We use the same c4 dataset as in [SparseGPT](https://github.com/IST-DASLab/sparsegpt). Since the original dowload link is invalid, please directly download it from this [link](https://drive.google.com/drive/folders/123Id1MkZVsKySGy_sMO4RgiJKrtPcvUp?usp=sharing) and add the two json files under the `utils/.` folder.
-- Efficiency Evaluation:
-```
+
+Download the c4 dataset from [this link](https://drive.google.com/drive/folders/123Id1MkZVsKySGy_sMO4RgiJKrtPcvUp?usp=sharing) and place the JSON files in `utils/`.
+
+**Efficiency Evaluation:**
+```bash
 python SVDLLM.py \
---step 5 \
---model_path COMPRESSD_MODEL_SAVING_PATH  \
+  --step 5 \
+  --model_path ./compressed_models/your_model.pt
 ```
+
+### Visualization
+
+Generate comparison graphs from benchmark results:
+
+```bash
+cd graphs
+python perplexity_graph.py
+python efficiency_graph.py
+python compression_speedup_graph.py
+python parameters_retained_graph.py
+```
+## Repository Structure
+
+```
+RSVD-LLM/
+├── SVDLLM.py                    # Main compression script
+├── compress_svd_vs_rsvd.sh      # Benchmark RSVD vs SVD compression
+├── evaluate_svd_vs_rsvd.sh      # Benchmark evaluation script
+├── evaluater.py                 # Evaluation utilities
+├── benchmark_results_comparison/ # Benchmark results (ratios 0.1-0.5)
+├── graphs/                      # Visualization scripts
+│   ├── perplexity_graph.py
+│   ├── efficiency_graph.py
+│   ├── compression_speedup_graph.py
+│   └── parameters_retained_graph.py
+├── component/                   # Modified model components
+├── utils/                       # Utilities and RSVD implementation
+│   └── rsvd.py                 # Randomized SVD implementation
+└── gptq/                        # GPTQ integration
+```
+
 ## Citation
-If you find this work useful, please cite
-```
+
+If you use this work, please cite the original SVD-LLM papers:
+
+```bibtex
 @inproceedings{wang2025svdllm,
   title={{SVD}-{LLM}: Truncation-aware Singular Value Decomposition for Large Language Model Compression},
   author={Xin Wang and Yu Zheng and Zhongwei Wan and Mi Zhang},
@@ -177,3 +196,7 @@ If you find this work useful, please cite
   url={https://openreview.net/forum?id=LNYIUouhdt}
 }
 ```
+
+## Acknowledgments
+
+This repository is based on [SVD-LLM](https://github.com/AIoT-MLSys-Lab/SVD-LLM) by the AIoT-MLSys Lab at The Ohio State University.
