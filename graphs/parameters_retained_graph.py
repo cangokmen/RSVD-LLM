@@ -60,28 +60,27 @@ kept_params_count = [kept * total_params for kept in data['kept_params']]
 x_values = [1 - r for r in data['ratio']]
 
 # Create the plot
-plt.figure(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(10, 6))
 
-# Plot line
-plt.plot(x_values, kept_params_count, marker='o', linewidth=2.5, markersize=10, 
-         color='#9b59b6', label='Compressed Model Parameters')
+# Plot bar chart
+bars = ax.bar(x_values, kept_params_count, width=0.06, color='#9b59b6', 
+              label='Compressed Model Parameters', edgecolor='black', linewidth=1.2)
 
 # Add horizontal line for base model
-plt.axhline(y=total_params, color='#2ecc71', linestyle='--', linewidth=2, 
-            label='Base Model (7B parameters)')
+ax.axhline(y=total_params, color='#2ecc71', linestyle='--', linewidth=2, 
+           label='Base Model (7B parameters)', zorder=0)
 
 # Customize plot
-plt.xlabel('Compression Ratio', fontsize=12, fontweight='bold')
-plt.ylabel('Number of Parameters (billions)', fontsize=12, fontweight='bold')
-plt.title('Number of Parameters', fontsize=14, fontweight='bold')
-plt.legend(fontsize=11, loc='lower right')
-plt.grid(True, alpha=0.3)
+ax.set_xlabel('Compression Ratio', fontsize=12, fontweight='bold')
+ax.set_ylabel('Number of Parameters (billions)', fontsize=12, fontweight='bold')
+ax.set_title('Number of Parameters', fontsize=14, fontweight='bold')
+ax.legend(fontsize=11, loc='lower right')
+ax.grid(True, alpha=0.3, axis='y')
 
 # Set axis limits and ticks
-plt.xticks([1 - r for r in ratios])
-plt.ylim([0, total_params * 1.05])
+ax.set_xticks([1 - r for r in ratios])
+ax.set_ylim([0, total_params * 1.05])
 # Format y-axis to show billions
-ax = plt.gca()
 ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e9:.1f}'))
 
 

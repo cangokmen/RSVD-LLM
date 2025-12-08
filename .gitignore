@@ -4,3 +4,4 @@ cache/*
 utils/c4-*
 *.pt
 **/*.pt
+.DS_Store
